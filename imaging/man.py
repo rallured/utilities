@@ -104,11 +104,12 @@ def rebin(a,shape):
     sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
     return nanmean(nanmean(a.reshape(sh),axis=3),axis=1)
 
-def stripnans(d,removeAll=False):
+def stripnans(d1,removeAll=False):
     """
     Need to fix removeAll. Likely need to remove rows/columns
     in a circular fashion until all perimeter NaNs are eliminated.
     """
+    d = np.copy(d1)
     if len(np.shape(d)) is 1:
         return d[~np.isnan(d)]
     if removeAll is False:

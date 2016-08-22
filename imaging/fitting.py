@@ -42,6 +42,14 @@ def legendre2d(d,xo=2,yo=2,xl=None,yl=None):
     
     return p(x,y),p.parameters.reshape((yo+1,xo+1))
 
+def fitCylMisalign(d):
+    """
+    Fit cylindrica misalignment terms to an image
+    Piston, tip, tilt, cylindrical sag, and astigmatism
+    are fit
+    """
+    return legendre2d(d,xl=[0,0,1,2,1],yl=[0,1,0,0,1])
+
 def sgolay2d ( z, window_size, order, derivative=None):
     """
     """
