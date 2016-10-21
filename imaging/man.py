@@ -23,7 +23,8 @@ def unpackimage(data,xlim=[-1,1],ylim=[-1,1],remove=True):
 
 def shiftNaN(img,n=1,axis=0):
     """This function shifts an image in a NaN padded array
-    Specify which axis to shift, and specify which direction
+    Specify which axis to shift, and specify wh
+    ich direction
     """
     #Construct array to insert
     if axis is 0:
@@ -152,3 +153,23 @@ def rotateImage(img,rot):
     #Interpolate from x,y to x2,y2
     img2 = griddata((x.flatten(),y.flatten()),img.flatten(),(x2,y2))
     return stripnans(img2)
+
+def newGridSize(img,newshape,method='linear'):
+    """
+    Interpolate an image onto a new shape size
+    """
+    shape1 = np.shape(img)
+    x1,y1 = np.meshgrid(range(shape1[1]),range(shape1[0]))
+    x2,y2 = np.meshgrid(np.linspace(0,shape1[1]-1,newshape[1]),\
+                        np.linspace(0,shape1[0]-1,newshape[0]))
+    img2 = griddata((x1.flatten(),y1.flatten()),img.flatten(),(x2,y2),\
+                    method=method)
+    return img2
+
+def nanflatten(img):
+    """
+    Automatically remove NaNs when flattening an image
+    """
+    d = img.flatten()
+    d = d[~np.isnan(d)]
+    return d
