@@ -21,6 +21,15 @@ def unpackimage(data,xlim=[-1,1],ylim=[-1,1],remove=True):
 
     return x.flatten(),y.flatten(),data.flatten()
 
+def autoGrid(d,xr=[-1,1],yr=[-1,1]):
+    """
+    Create a meshgrid based on the shape of the image d
+    """
+    xspan = np.linspace(xr[0],xr[1],np.shape(d)[0])
+    yspan = np.linspace(yr[0],yr[1],np.shape(d)[1])
+    return np.meshgrid(xspan,yspan)
+    
+
 def shiftNaN(img,n=1,axis=0):
     """This function shifts an image in a NaN padded array
     Specify which axis to shift, and specify wh

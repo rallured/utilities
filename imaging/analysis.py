@@ -12,6 +12,18 @@ def rms(d):
     """Return the RMS of an image"""
     return sqrt(nanmean((d-nanmean(d))**2))
 
+def fitSag(d):
+    """
+    Compute sag to a vector by fitting a quadratic
+    """
+    if np.sum(np.isnan(d))==len(d):
+        return np.nan
+    x = np.arange(len(d))
+    x = x[~np.isnan(d)]
+    d = d[~np.isnan(d)]
+    fit = np.polyfit(x,d,2)
+    return fit[0]
+
 def findMoments(d):
     x,y = meshgrid(arange(shape(d)[1]),arange(shape(d)[0]))
     cx = nansum(x*d)/nansum(d)
