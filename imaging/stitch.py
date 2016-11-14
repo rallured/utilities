@@ -213,4 +213,39 @@ def overlapImages(img1,img2,scale=False):
     pdb.set_trace()
 
     return imgnew
+
+def AlignImagesWithFiducials(img1,img2,xf1,yf1,xf2,yf2):
+    """
+    Aligns img2 to img1 based on an array listing the x,y coordinates of common fiducials.
+    Arguments:
+    img1 - the reference image to be aligned to.
+    img2 - the image to be aligned to the reference image.
+    xf1 - an array containing the x coordinates of the fiducials in img1
+    yf1 - an array containing the y coordinates of the fiducials in img1.
+    xf2 - an array containing the x coordinates of the fiducials in img2.
+    yf2 - an array containing the y coordinates of the fiducials in img2.
+    Returns:
+    newimg - img2 as aligned and interpolated to the coordinates of img1.
+    """
+    #Match them
+    tx,ty,theta = matchFiducials(yf1,xf1,yf2,xf2)
+
+    x2_wNaNs,y2_wNaNs,z2_wNaNs = man.unpackimage(img2,remove = False,xlim=[0,np.shape(img2)[1]],\
+                           ylim=[0,np.shape(img2)[0]])
+    #Apply transformations to x,y coords
+    x2_wNaNs,y2_wNaNs = transformCoords(x2_wNaNs,y2_wNaNs,ty,tx,theta)
     
+    #Get x,y,z points from reference image
+    x1,y1,z1 = man.unpackimage(img1,remove=False,xlim=[0,np.shape(img1)[1]],\
+                           ylim=[0,np.shape(img1)[0]])
+
+    #Interpolate stitched image onto expanded image grid
+    newimg = griddata((x2_wNaNs,y2_wNaNs),z2_wNaNs,(x1,y1),method='linear')
+    print 'Interpolation ok'
+    newimg = newimg.reshape(np.shape(img1))
+
+    #Images should now be in the same reference frame
+    #Time to apply tip/tilt/piston to minimize RMS
+    newimg = matchPistonTipTilt(img1,newimg)
+
+    return newimg
