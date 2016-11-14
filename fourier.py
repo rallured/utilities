@@ -2,7 +2,6 @@ import numpy as np
 import pdb
 
 #This module contains Fourier analysis routine
-#New comment
 
 def components(d,win=1):
     """Want to return Fourier components with optional window
