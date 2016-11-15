@@ -24,13 +24,18 @@ def transformCoords(x,y,tx,ty,theta):
 
     return pos1[0],pos1[1]
 
-def sumOfSquares(x1,y1,x2,y2):
-    """Computes the sum of the squares of the residuals
-    for two lists of coordinates
+def transformCoords_wMag(x,y,tx,ty,theta,mag):
+    """Transforms coordinates x,y by magnifying x,y by a constant factor,
+    then translating tx,ty and rotating theta about x
+    Returns: x,y of new coords
     """
-    return sum(sqrt((x1-x2)**2+(y1-y2)**2))
+    mag_x,mag_y = x*mag,y*mag
+    trans = tr.translation_matrix([tx,ty,0])
+    rot = tr.rotation_matrix(theta,[0,0,1],point=[mean(x),mean(y),0])
+    pos0 = array((mag_x,mag_y,repeat(0.,size(x)),repeat(1.,size(x))))
+    pos1 = dot(trans,dot(rot,pos0))
+    return pos1[0],pos1[1]
     
-
 def matchFiducials(x1,y1,x2,y2):
     """This function will compute a rotation and translation
     to match a list of fiducial coordinates
@@ -51,6 +56,39 @@ def matchFiducials(x1,y1,x2,y2):
                    options={'disp':True,'maxfev':1000})
     
     return res['x']
+
+def matchFiducials_wMag(x1,y1,x2,y2):
+    '''
+    This function will compute a rotation, translation and
+    magnification needed to match a list of fiducial coordinates.
+    Returns:
+    tx, ty - translations
+    theta - rotation
+    mag - magnification factor
+    These transformations are needed to bring x2,y2 to x1,y1
+    '''
+
+    #Make function to minimize
+    fun = lambda p: sumOfSquares(x1,y1,*transformCoords_wMag(x2,y2,*p))
+    
+    #Make starting guess
+    start = zeros(4)
+    start[0] = mean(x1-x2)
+    start[1] = mean(y1-y2)
+    start[2] = .0001
+    start[3] = 1.0
+
+    #Run minimization and return fiducial transformation
+    res = minimize(fun,start,method='nelder-mead',\
+                   options={'disp':True,'maxfev':1000})
+    
+    return res['x']
+
+def sumOfSquares(x1,y1,x2,y2):
+    """Computes the sum of the squares of the residuals
+    for two lists of coordinates
+    """
+    return sum(sqrt((x1-x2)**2+(y1-y2)**2))
 
 def matchPistonTipTilt(img1,img2):
     """This function applies piston and tip/tilt
@@ -228,12 +266,12 @@ def AlignImagesWithFiducials(img1,img2,xf1,yf1,xf2,yf2):
     newimg - img2 as aligned and interpolated to the coordinates of img1.
     """
     #Match them
-    tx,ty,theta = matchFiducials(yf1,xf1,yf2,xf2)
+    tx,ty,theta,mag = matchFiducials_wMag(yf1,xf1,yf2,xf2)
 
     x2_wNaNs,y2_wNaNs,z2_wNaNs = man.unpackimage(img2,remove = False,xlim=[0,np.shape(img2)[1]],\
                            ylim=[0,np.shape(img2)[0]])
     #Apply transformations to x,y coords
-    x2_wNaNs,y2_wNaNs = transformCoords(x2_wNaNs,y2_wNaNs,ty,tx,theta)
+    x2_wNaNs,y2_wNaNs = transformCoords_wMag(x2_wNaNs,y2_wNaNs,ty,tx,theta,mag)
     
     #Get x,y,z points from reference image
     x1,y1,z1 = man.unpackimage(img1,remove=False,xlim=[0,np.shape(img1)[1]],\
