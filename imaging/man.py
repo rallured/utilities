@@ -90,10 +90,10 @@ def tipTiltPiston(img,piston,tip,tilt,tx=None,ty=None):
     Updated
     """
     if tx is None:
-        ty,tx = meshgrid(arange(shape(img)[1]),\
-                                arange(shape(img)[0]))
-        tx = (tx-mean(tx)) / tx.max()
-        ty = (ty-mean(ty)) / ty.max()
+        ty,tx = np.meshgrid(np.arange(np.shape(img)[1]),\
+                                np.arange(np.shape(img)[0]))
+        tx = (tx-np.mean(tx)) / tx.max()
+        ty = (ty-np.mean(ty)) / ty.max()
 
     return img + piston + tip*tx + tilt*ty
 

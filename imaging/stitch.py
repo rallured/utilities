@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import man
 from scipy.optimize import minimize
 from analysis import getPoints
-import pdb
 from scipy.interpolate import griddata
 from utilities.plotting import nanmean
+
+import pdb
 
 def transformCoords(x,y,tx,ty,theta):
     """Transforms coordinates x,y by translating tx,ty
@@ -31,9 +32,9 @@ def transformCoords_wMag(x,y,tx,ty,theta,mag):
     """
     mag_x,mag_y = x*mag,y*mag
     trans = tr.translation_matrix([tx,ty,0])
-    rot = tr.rotation_matrix(theta,[0,0,1],point=[mean(x),mean(y),0])
-    pos0 = array((mag_x,mag_y,repeat(0.,size(x)),repeat(1.,size(x))))
-    pos1 = dot(trans,dot(rot,pos0))
+    rot = tr.rotation_matrix(theta,[0,0,1],point=[np.mean(x),np.mean(y),0])
+    pos0 = np.array((mag_x,mag_y,np.repeat(0.,np.size(x)),np.repeat(1.,np.size(x))))
+    pos1 = np.dot(trans,np.dot(rot,pos0))
     return pos1[0],pos1[1]
     
 def matchFiducials(x1,y1,x2,y2):
@@ -72,9 +73,9 @@ def matchFiducials_wMag(x1,y1,x2,y2):
     fun = lambda p: sumOfSquares(x1,y1,*transformCoords_wMag(x2,y2,*p))
     
     #Make starting guess
-    start = zeros(4)
-    start[0] = mean(x1-x2)
-    start[1] = mean(y1-y2)
+    start = np.zeros(4)
+    start[0] = np.mean(x1-x2)
+    start[1] = np.mean(y1-y2)
     start[2] = .0001
     start[3] = 1.0
 
@@ -88,7 +89,7 @@ def sumOfSquares(x1,y1,x2,y2):
     """Computes the sum of the squares of the residuals
     for two lists of coordinates
     """
-    return sum(sqrt((x1-x2)**2+(y1-y2)**2))
+    return sum(np.sqrt((x1-x2)**2+(y1-y2)**2))
 
 def matchPistonTipTilt(img1,img2):
     """This function applies piston and tip/tilt
