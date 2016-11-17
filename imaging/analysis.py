@@ -165,7 +165,7 @@ def getSubApp(img,log=False,points=None):
         x,y = points
     return img[y.min():y.max(),x.min():x.max()]
 
-def read4D(fn,rotate=np.linspace(-.75,-1.25),,interp=None):
+def readCyl4D(fn,rotate=np.linspace(-.75,-1.25),,interp=None):
     """
     Load in data from 4D measurement of cylindrical mirror.
     Scale to microns, remove misalignments,
