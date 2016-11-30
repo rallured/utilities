@@ -4,7 +4,7 @@ from numpy import *
 from matplotlib.colors import LogNorm
 import pdb
 
-import utilities.imaging.stitch as stitch
+import man
 
 def ptov(d):
     """Return the peak to valley of an image"""
