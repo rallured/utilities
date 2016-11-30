@@ -50,6 +50,23 @@ def fitCylMisalign(d):
     """
     return legendre2d(d,xl=[0,0,1,2,1],yl=[0,1,0,0,1])
 
+def fitLegendreDistortions(d,xo=2,yo=2,xl=None,yl=None):
+    """
+    Fit 2D Legendre's to a distortion map as read by 4D.
+    If sum of orders is odd, the coefficient needs to be negated.
+    """
+    #Find and format coefficient arrays
+    fit = legendre2d(d,xo=xo,yo=yo,xl=xl,yl=yl)
+    az,ax = np.meshgrid(range(xo+1),range(yo+1))
+    az = az.flatten()
+    ax = ax.flatten()
+    coeff = fit[1].flatten()
+
+    #Perform negation
+    coeff[(az+ax)%2==1] *= -1.
+    
+    return [coeff,ax,az]
+
 def sgolay2d ( z, window_size, order, derivative=None):
     """
     """
