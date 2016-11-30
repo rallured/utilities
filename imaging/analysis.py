@@ -4,6 +4,8 @@ from numpy import *
 from matplotlib.colors import LogNorm
 import pdb
 
+import utilities.imaging.stitch as stitch
+
 def ptov(d):
     """Return the peak to valley of an image"""
     return nanmax(d)-nanmin(d)
