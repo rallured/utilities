@@ -3,6 +3,11 @@ from matplotlib.pyplot import *
 from numpy import *
 from matplotlib.colors import LogNorm
 import pdb
+import scipy.ndimage.interpolation as nd
+
+import man
+from fitting import fitCylMisalign
+
 
 def ptov(d):
     """Return the peak to valley of an image"""
@@ -178,13 +183,13 @@ def readCyl4D(fn,rotate=np.linspace(-.75,-1.25),interp=None):
     viewing the concave surface.
     """
     #Remove NaNs and rescale
-    d = np.genfromtxt(fn,skip_header=12,delimiter=',')
+    d = genfromtxt(fn,skip_header=12,delimiter=',')
     d = man.stripnans(d)
     d = d *.6328
     d = d - np.nanmean(d)
 
     #Remove cylindrical misalignment terms
-    d = d - fit.fitCylMisalign(d)[0]
+    d = d - fitCylMisalign(d)[0]
 
     #Interpolate over NaNs
     if interp is not None:
