@@ -5,6 +5,7 @@ from matplotlib.colors import LogNorm
 import pdb
 
 import man
+from fitting import fitCylMisalign
 
 def ptov(d):
     """Return the peak to valley of an image"""
@@ -186,7 +187,7 @@ def readCyl4D(fn,rotate=np.linspace(-.75,-1.25),interp=None):
     d = d - np.nanmean(d)
 
     #Remove cylindrical misalignment terms
-    d = d - fit.fitCylMisalign(d)[0]
+    d = d - fitCylMisalign(d)[0]
 
     #Interpolate over NaNs
     if interp is not None:
