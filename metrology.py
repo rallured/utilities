@@ -4,8 +4,10 @@ import utilities.imaging.man as man
 import utilities.imaging.fitting as fit
 import scipy.ndimage as nd
 from linecache import getline
+import astropy.io.fits as pyfits
+import pdb
 
-def readCyl4D(fn,rotate=np.linspace(.75,1.25,50),interp=None):
+def readCyl4D(fn,rotate=np.linspace(.75,1.5,50),interp=None):
     """
     Load in data from 4D measurement of cylindrical mirror.
     Scale to microns, remove misalignments,
@@ -39,9 +41,8 @@ def readCyl4D(fn,rotate=np.linspace(.75,1.25,50),interp=None):
         b = [np.sum(np.isnan(\
             man.stripnans(\
                 nd.rotate(d,a,order=1,cval=np.nan)))) for a in rotate]
-        pdb.set_trace()
         return man.stripnans(\
-            nd.rotate(d,rotate[np.argmin(b)],order=1,cval=np.nan))
+            nd.rotate(d,rotate[np.argmin(b)],order=1,cval=np.nan)),dx
 
     return d,dx
 
@@ -70,3 +71,24 @@ def readFlat4D(fn,interp=None):
         d = man.nearestNaN(d,method=interp)
 
     return d,dx
+
+def write4DFits(filename,img,dx,dx2=None):
+    """
+    Write processed 4D data into a FITS file.
+    Axial pixel size is given by dx.
+    Azimuthal pixel size is given by dx2 - default to none
+    """
+    hdr = pyfits.Header()
+    hdr['DX'] = dx
+    hdu = pyfits.PrimaryHDU(data=img,header=hdr)
+    hdu.writeto(filename,clobber=True)
+    return
+
+def read4DFits(filename):
+    """
+    Write FITS file of processed 4D data.
+    Returns img,dx in list
+    """
+    dx = pyfits.getval(filename,'DX')
+    img = pyfits.getdata(filename)
+    return [img,dx]

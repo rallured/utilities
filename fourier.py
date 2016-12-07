@@ -89,7 +89,24 @@ def meanPSD(d,win=1,dx=1.,axis=0):
     c = c[:np.size(c)/2]
     c[1:] = 2*c[1:]
     return f,c
-    
+
+def medianPSD(d,win=1,dx=1.,axis=0):
+    """Return the 1D PSD "medianed" over a surface.
+    Axis indicates the axis over which to FFT"""
+    if win is not 1:
+        win = win(np.shape(d)[axis])/\
+              np.sqrt(np.mean(win(np.shape(d)[axis])**2))
+        win = np.repeat(win,np.shape(d)[axis-1])
+        win = np.reshape(win,(np.shape(d)[axis],np.shape(d)[axis-1]))
+        if axis is 1:
+            win = np.transpose(win)
+    c = np.abs(np.fft.fft(d*win,axis=axis)/np.shape(d)[axis])**2
+    c = np.median(c,axis=axis-1)
+    f = np.fft.fftfreq(np.size(c),d=dx)
+    f = f[:np.size(c)/2]
+    c = c[:np.size(c)/2]
+    c[1:] = 2*c[1:]
+    return f,c
 
 def realPSD(d,win=1,dx=1.,axis=None):
     """This function returns the PSD of a real function
