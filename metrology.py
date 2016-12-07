@@ -38,7 +38,7 @@ def readCyl4D(fn,rotate=np.linspace(.75,1.5,50),interp=None):
             man.stripnans(\
                 nd.rotate(d,a,order=1,cval=np.nan)))) for a in rotate]
         d = man.stripnans(\
-            nd.rotate(d,rotate[np.argmin(b)],order=1,cval=np.nan)),dx
+            nd.rotate(d,rotate[np.argmin(b)],order=1,cval=np.nan))
 
     #Interpolate over NaNs
     if interp is not None:
