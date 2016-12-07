@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import utilities.imaging.man as man
 import utilities.imaging.fitting as fit
 import scipy.ndimage as nd
+from linecache import getline
 
 def readCyl4D(fn,rotate=np.linspace(.75,1.25,50),interp=None):
     """
@@ -16,6 +17,10 @@ def readCyl4D(fn,rotate=np.linspace(.75,1.25,50),interp=None):
     Imshow will present distortion in proper orientation as if
     viewing the concave surface.
     """
+    #Get xpix value in mm
+    l = getline(fn,9)
+    dx = float(l.split()[1])*1000.
+    
     #Remove NaNs and rescale
     d = np.genfromtxt(fn,skip_header=12,delimiter=',')
     d = man.stripnans(d)
@@ -38,7 +43,7 @@ def readCyl4D(fn,rotate=np.linspace(.75,1.25,50),interp=None):
         return man.stripnans(\
             nd.rotate(d,rotate[np.argmin(b)],order=1,cval=np.nan))
 
-    return d
+    return d,dx
 
 def readFlat4D(fn,interp=None):
     """
@@ -49,6 +54,10 @@ def readFlat4D(fn,interp=None):
     Imshow will present distortion in proper orientation as if
     viewing the surface.
     """
+    #Get xpix value in mm
+    l = getline(fn,9)
+    dx = float(l.split()[1])*1000.
+    
     #Remove NaNs and rescale
     d = np.genfromtxt(fn,skip_header=12,delimiter=',')
     d = man.stripnans(d)
@@ -60,4 +69,4 @@ def readFlat4D(fn,interp=None):
     if interp is not None:
         d = man.nearestNaN(d,method=interp)
 
-    return d
+    return d,dx
