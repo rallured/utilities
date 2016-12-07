@@ -32,17 +32,17 @@ def readCyl4D(fn,rotate=np.linspace(.75,1.5,50),interp=None):
     #Remove cylindrical misalignment terms
     d = d - fit.fitCylMisalign(d)[0]
 
-    #Interpolate over NaNs
-    if interp is not None:
-        d = man.nearestNaN(d,method=interp)
-
     #Rotate out CGH roll misalignment?
     if rotate is not None:
         b = [np.sum(np.isnan(\
             man.stripnans(\
                 nd.rotate(d,a,order=1,cval=np.nan)))) for a in rotate]
-        return man.stripnans(\
+        d = man.stripnans(\
             nd.rotate(d,rotate[np.argmin(b)],order=1,cval=np.nan)),dx
+
+    #Interpolate over NaNs
+    if interp is not None:
+        d = man.nearestNaN(d,method=interp)
 
     return d,dx
 
