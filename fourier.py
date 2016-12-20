@@ -181,16 +181,22 @@ def computeFreqBand(f,p,f1,f2,df):
     Interpolate between f1 and f2 with size df
     Then use numerical integration
     """
-    newf = np.linspace(f1,f2,(f2-f1)/dx+1)
-    newp = griddata(f,p/f[0],newf,method='linear')
+    newf = np.linspace(f1,f2,(f2-f1)/df+1)
+    try:
+        newp = griddata(f,p/f[0],newf,method='linear')
+    except:
+        pdb.set_trace()
     return np.sqrt(simps(newp,x=newf))
 
-def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=None,nans=False):
+def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=None,nans=False,minpx=10):
     """
     Wrapper to take the FFT and immediately return the
     power between f1 and f2 of a slice
+    If slice length is < 10, return nan
     """
-    f,p = realPSD(d,**kwargs)
+    if np.sum(~np.isnan(d)) < 10:
+        return np.nan
+    f,p = realPSD(d,dx=dx,win=win,nans=nans)
     return computeFreqBand(f,p,f1,f2,df)
 
 def lowpass(d,dx,fcut):
