@@ -1,5 +1,8 @@
 import numpy as np
 import pdb
+from scipy.interpolate import griddata
+from imaging.man import stripnans,nearestNaN
+from scipy.integrate import simps
 
 #This module contains Fourier analysis routine
 
@@ -41,7 +44,12 @@ def continuousComponents(d,dx,win=1):
 
     #Compute Fourier components
     return np.fft.fftn(d*win)*dx
-    
+
+def newFreq(f,p,nf):
+    """
+    Interpolate a power spectrum onto a new frequency grid.
+    """
+    return griddata(f,p,nf,method=metehod)
 
 def freqgrid(d,dx=1.):
     """Return a frequency grid to match FFT components
@@ -72,9 +80,48 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=1):
     #Invert the FFT and return the filtered image
     return fft.ifftn(fftcomp)
 
-def meanPSD(d,win=1,dx=1.,axis=0):
+def meanPSD(d0,win=1,dx=1.,axis=0,irregular=False,returnInd=False):
     """Return the 1D PSD averaged over a surface.
-    Axis indicates the axis over which to FFT"""
+    Axis indicates the axis over which to FFT
+    If irregular is True, each slice will be stripped
+    and then the power spectra
+    interpolated to common frequency grid
+    Presume image has already been interpolated internally
+    If returnInd is true, return array of power spectra
+    """
+    #Handle which axis is transformed
+    if axis==0:
+        d0 = np.transpose(d0)
+    #Create list of slices
+    if irregular is True:
+        d0 = [stripnans(di) for di in d0]
+    else:
+        d0 = [di for di in d0]
+    #Create power spectra from each slice
+    pows = [realPSD(s,win=win,dx=dx) for s in d0]
+    #Interpolate onto common frequency grid of shortest slice
+    if irregular is True:
+        #Determine smallest frequency grid
+        ln = [len(s) for s in d0]
+        freq = pows[np.argmin(ln)][0]
+        #Interpolate
+        pp = [griddata(p[0],p[1],freq) for p in pows]
+    else:
+        pp = [p[1] for p in pows]
+        freq = pows[0][0]
+    #Average
+    pa = np.mean(pp,axis=0)
+    if returnInd is True:
+        return freq,pp
+    return freq,pa
+
+def medianPSD(d0,win=1,dx=1.,axis=0,nans=False):
+    """Return the 1D PSD "medianed" over a surface.
+    Axis indicates the axis over which to FFT
+    If nans is True, each slice will be stripped,
+    internally interpolated, and then the power spectra
+    interpolated to common frequency grid"""
+    d = stripnans(d0)
     if win is not 1:
         win = win(np.shape(d)[axis])/\
               np.sqrt(np.mean(win(np.shape(d)[axis])**2))
@@ -83,19 +130,22 @@ def meanPSD(d,win=1,dx=1.,axis=0):
         if axis is 1:
             win = np.transpose(win)
     c = np.abs(np.fft.fft(d*win,axis=axis)/np.shape(d)[axis])**2
-    c = np.mean(c,axis=axis-1)
+    c = np.median(c,axis=axis-1)
     f = np.fft.fftfreq(np.size(c),d=dx)
     f = f[:np.size(c)/2]
     c = c[:np.size(c)/2]
     c[1:] = 2*c[1:]
     return f,c
-    
 
-def realPSD(d,win=1,dx=1.,axis=None):
+def realPSD(d0,win=1,dx=1.,axis=None,nans=False):
     """This function returns the PSD of a real function
     Gets rid of zero frequency and puts all power in positive frequencies
     Returns only positive frequencies
     """
+    if nans is True:
+        d = stripnans(d0)
+    else:
+        d = d0
     #Get Fourier components
     c = components(d,win=win)
     #Handle collapsing to 1D PSD if axis keyword is set
@@ -122,7 +172,32 @@ def realPSD(d,win=1,dx=1.,axis=None):
         c[0] = 0.
         c = c*np.sqrt(2.)
 
-    return f,np.abs(c)**2
+    return f[1:],np.abs(c[1:])**2
+
+def computeFreqBand(f,p,f1,f2,df):
+    """
+    Compute the power in the PSD between f1 and f2.
+    f and p should be as returned by realPSD or meanPSD
+    Interpolate between f1 and f2 with size df
+    Then use numerical integration
+    """
+    newf = np.linspace(f1,f2,(f2-f1)/df+1)
+    try:
+        newp = griddata(f,p/f[0],newf,method='linear')
+    except:
+        pdb.set_trace()
+    return np.sqrt(simps(newp,x=newf))
+
+def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=None,nans=False,minpx=10):
+    """
+    Wrapper to take the FFT and immediately return the
+    power between f1 and f2 of a slice
+    If slice length is < 10, return nan
+    """
+    if np.sum(~np.isnan(d)) < 10:
+        return np.nan
+    f,p = realPSD(d,dx=dx,win=win,nans=nans)
+    return computeFreqBand(f,p,f1,f2,df)
 
 def lowpass(d,dx,fcut):
     """Apply a low pass filter to a 1 or 2 dimensional array.
