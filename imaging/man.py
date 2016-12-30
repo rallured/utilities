@@ -182,3 +182,29 @@ def nanflatten(img):
     d = img.flatten()
     d = d[~np.isnan(d)]
     return d
+
+def removePoly(l,order=2):
+    """
+    Remove a polynomial up to order from a slice.
+    NaNs are ignored.
+    """
+    ind = np.invert(np.isnan(l))
+    x = np.arange(len(l))
+    fit = np.polyfit(x[ind],l[ind],order)
+
+    return l - np.polyval(fit,x)
+
+def removeLegSlice(din,order=2,axis=0):
+    """
+    Remove a Legendre polynomial up to order from each
+    slice of an image.
+    """
+    d = np.copy(din)
+    if axis is 0:
+        d = np.transpose(d)
+    for i in range(len(d)):
+        d[i,:] = removePoly(d[i,:],order=order)
+    if axis is 0:
+        d = np.transpose(d)
+    
+    return d
