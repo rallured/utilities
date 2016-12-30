@@ -194,10 +194,27 @@ def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=None,nans=False,minpx=10):
     power between f1 and f2 of a slice
     If slice length is < 10, return nan
     """
-    if np.sum(~np.isnan(d)) < 10:
+    if np.sum(~np.isnan(d)) < minpx:
         return np.nan
     f,p = realPSD(d,dx=dx,win=win,nans=nans)
     return computeFreqBand(f,p,f1,f2,df)
+
+def psdScan(d,f1,f2,df,N,axis=0,dx=1.,win=None,nans=False,minpx=10):
+    """
+    Take a running slice of length N and compute band limited
+    power over the entire image. Resulting power array will be
+    of shape (S1-N,S2) if axis is 0
+    axis is which axis to FFT over
+    """
+    if axis is 0:
+        d = np.transpose(d)
+    sh = np.shape(d)
+    m = np.array([[fftComputeFreqBand(di[i:i+N],f1,f2,df,dx=dx,win=win,nans=nans,minpx=minpx) \
+      for i in range(sh[1]-N)] for di in d])
+    if axis is 0:
+        m = np.transpose(m)
+    return m
+    
 
 def lowpass(d,dx,fcut):
     """Apply a low pass filter to a 1 or 2 dimensional array.
