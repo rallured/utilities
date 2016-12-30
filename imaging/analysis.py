@@ -3,11 +3,6 @@ from matplotlib.pyplot import *
 from numpy import *
 from matplotlib.colors import LogNorm
 import pdb
-import scipy.ndimage.interpolation as nd
-
-import man
-from fitting import fitCylMisalign
-
 
 def ptov(d):
     """Return the peak to valley of an image"""
