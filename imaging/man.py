@@ -25,8 +25,8 @@ def autoGrid(d,xr=[-1,1],yr=[-1,1]):
     """
     Create a meshgrid based on the shape of the image d
     """
-    xspan = np.linspace(xr[0],xr[1],np.shape(d)[0])
-    yspan = np.linspace(yr[0],yr[1],np.shape(d)[1])
+    xspan = np.linspace(xr[0],xr[1],np.shape(d)[1])
+    yspan = np.linspace(yr[0],yr[1],np.shape(d)[0])
     return np.meshgrid(xspan,yspan)
     
 
@@ -188,6 +188,8 @@ def removePoly(l,order=2):
     Remove a polynomial up to order from a slice.
     NaNs are ignored.
     """
+    if np.sum(~np.isnan(l))<2:
+        return
     ind = np.invert(np.isnan(l))
     x = np.arange(len(l))
     fit = np.polyfit(x[ind],l[ind],order)
