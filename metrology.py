@@ -116,7 +116,7 @@ def readCylWFS(fn,rotate=np.linspace(.75,1.5,50),interp=None):
     d = d - fit.fitCylMisalign(d)[0]
     
     # Flip up/down based on CGH orientation and negate to make bump positive.
-    d = -flipud(d)
+    d = -np.flipud(d)
     
     #Interpolate over NaNs
     if interp is not None:
