@@ -44,7 +44,7 @@ def legendre2d(d,xo=2,yo=2,xl=None,yl=None):
 
 def fitCylMisalign(d):
     """
-    Fit cylindrica misalignment terms to an image
+    Fit cylindrical misalignment terms to an image
     Piston, tip, tilt, cylindrical sag, and astigmatism
     are fit
     """
