@@ -1,6 +1,7 @@
 #This submodule includes routines to manipulate image arrays
 import numpy as np
 from scipy.interpolate import griddata
+from utilities.imaging.fitting import legendre2d
 
 import pdb
 
@@ -25,8 +26,8 @@ def autoGrid(d,xr=[-1,1],yr=[-1,1]):
     """
     Create a meshgrid based on the shape of the image d
     """
-    xspan = np.linspace(xr[0],xr[1],np.shape(d)[0])
-    yspan = np.linspace(yr[0],yr[1],np.shape(d)[1])
+    xspan = np.linspace(xr[0],xr[1],np.shape(d)[1])
+    yspan = np.linspace(yr[0],yr[1],np.shape(d)[0])
     return np.meshgrid(xspan,yspan)
     
 
@@ -188,6 +189,8 @@ def removePoly(l,order=2):
     Remove a polynomial up to order from a slice.
     NaNs are ignored.
     """
+    if np.sum(~np.isnan(l))<2:
+        return
     ind = np.invert(np.isnan(l))
     x = np.arange(len(l))
     fit = np.polyfit(x[ind],l[ind],order)
@@ -208,3 +211,46 @@ def removeLegSlice(din,order=2,axis=0):
         d = np.transpose(d)
     
     return d
+
+def remove2DLeg(din,xo=2,yo=0):
+    """
+    Remove a 2D Legendre fit to din up to
+    xo and yo.
+    """
+    f = legendre2d(din,xo=xo,yo=yo)[0]
+    
+    return din-f
+
+def removeDS9Regions(img,filename):
+    """
+    Read in an SAOImage region file and set all
+    pixels within regions to NaN.
+    File should look like:
+    circle(x,y,rad)
+    box(x,y,dx,dy,0)
+    ellipse(x,y,dx,dy,0)
+    """
+    #Construct index grid
+    y,x = np.meshgrid(range(np.shape(img)[1]),range(np.shape(img)[0]))
+    
+    #Get region data
+    f = open(filename,'r')
+    lines = f.readlines()
+
+    for l in lines:
+        t = l.split('(')[0]
+        n = np.array(l.split('(')[1].split(','))
+        n[-1] = n[-1][:-2]
+        n = n.astype('float')
+        if t == 'circle':
+            ind = (x-n[1])**2+(y-n[0])**2 < n[2]**2
+        elif t == 'box':
+            yind = np.logical_and(y<n[0]+n[2]/2,y>n[0]-n[2]/2)
+            xind = np.logical_and(x<n[1]+n[3]/2,x>n[1]-n[3]/2)
+            ind = np.logical_and(xind,yind)
+        elif t == 'ellipse':
+            ind = []
+        img[ind] = np.nan
+
+        
+    return img

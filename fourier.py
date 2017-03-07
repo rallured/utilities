@@ -80,7 +80,7 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=1):
     #Invert the FFT and return the filtered image
     return fft.ifftn(fftcomp)
 
-def meanPSD(d0,win=1,dx=1.,axis=0,irregular=False,returnInd=False):
+def meanPSD(d0,win=1,dx=1.,axis=0,irregular=False,returnInd=False,minpx=10):
     """Return the 1D PSD averaged over a surface.
     Axis indicates the axis over which to FFT
     If irregular is True, each slice will be stripped
@@ -88,6 +88,7 @@ def meanPSD(d0,win=1,dx=1.,axis=0,irregular=False,returnInd=False):
     interpolated to common frequency grid
     Presume image has already been interpolated internally
     If returnInd is true, return array of power spectra
+    Ignores slices with less than minpx non-nans
     """
     #Handle which axis is transformed
     if axis==0:
@@ -98,11 +99,12 @@ def meanPSD(d0,win=1,dx=1.,axis=0,irregular=False,returnInd=False):
     else:
         d0 = [di for di in d0]
     #Create power spectra from each slice
-    pows = [realPSD(s,win=win,dx=dx) for s in d0]
+    pows = [realPSD(s,win=win,dx=dx,minpx=minpx) for s in d0 \
+            if np.sum(~np.isnan(s)) >= minpx]
     #Interpolate onto common frequency grid of shortest slice
     if irregular is True:
         #Determine smallest frequency grid
-        ln = [len(s) for s in d0]
+        ln = [len(s[0]) for s in pows]
         freq = pows[np.argmin(ln)][0]
         #Interpolate
         pp = [griddata(p[0],p[1],freq) for p in pows]
@@ -137,7 +139,7 @@ def medianPSD(d0,win=1,dx=1.,axis=0,nans=False):
     c[1:] = 2*c[1:]
     return f,c
 
-def realPSD(d0,win=1,dx=1.,axis=None,nans=False):
+def realPSD(d0,win=1,dx=1.,axis=None,nans=False,minpx=10):
     """This function returns the PSD of a real function
     Gets rid of zero frequency and puts all power in positive frequencies
     Returns only positive frequencies
@@ -146,6 +148,8 @@ def realPSD(d0,win=1,dx=1.,axis=None,nans=False):
         d = stripnans(d0)
     else:
         d = d0
+    if len(d) < minpx:
+        return np.nan
     #Get Fourier components
     c = components(d,win=win)
     #Handle collapsing to 1D PSD if axis keyword is set
@@ -174,7 +178,7 @@ def realPSD(d0,win=1,dx=1.,axis=None,nans=False):
 
     return f[1:],np.abs(c[1:])**2
 
-def computeFreqBand(f,p,f1,f2,df):
+def computeFreqBand(f,p,f1,f2,df,method='linear'):
     """
     Compute the power in the PSD between f1 and f2.
     f and p should be as returned by realPSD or meanPSD
@@ -183,12 +187,13 @@ def computeFreqBand(f,p,f1,f2,df):
     """
     newf = np.linspace(f1,f2,(f2-f1)/df+1)
     try:
-        newp = griddata(f,p/f[0],newf,method='linear')
+        newp = griddata(f,p/f[0],newf,method=method)
     except:
         pdb.set_trace()
     return np.sqrt(simps(newp,x=newf))
 
-def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=None,nans=False,minpx=10):
+def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=1,nans=False,minpx=10,\
+                       method='linear'):
     """
     Wrapper to take the FFT and immediately return the
     power between f1 and f2 of a slice
@@ -197,9 +202,9 @@ def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=None,nans=False,minpx=10):
     if np.sum(~np.isnan(d)) < minpx:
         return np.nan
     f,p = realPSD(d,dx=dx,win=win,nans=nans)
-    return computeFreqBand(f,p,f1,f2,df)
+    return computeFreqBand(f,p,f1,f2,df,method=method)
 
-def psdScan(d,f1,f2,df,N,axis=0,dx=1.,win=None,nans=False,minpx=10):
+def psdScan(d,f1,f2,df,N,axis=0,dx=1.,win=1,nans=False,minpx=10):
     """
     Take a running slice of length N and compute band limited
     power over the entire image. Resulting power array will be
