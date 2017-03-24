@@ -80,7 +80,7 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=np.hanning):
     #Invert the FFT and return the filtered image
     return fft.ifftn(fftcomp)
 
- meanPSD(d0,win=np.hanning,dx=1.,axis=0,irregular=False,returnInd=False,minpx=10):
+def meanPSD(d0,win=np.hanning,dx=1.,axis=0,irregular=False,returnInd=False,minpx=10):
     """Return the 1D PSD averaged over a surface.
     Axis indicates the axis over which to FFT
     If irregular is True, each slice will be stripped
@@ -117,7 +117,7 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=np.hanning):
         return freq,pp
     return freq,pa
 
- medianPSD(d0,win=np.hanning,dx=1.,axis=0,nans=False):
+def medianPSD(d0,win=np.hanning,dx=1.,axis=0,nans=False):
     """Return the 1D PSD "medianed" over a surface.
     Axis indicates the axis over which to FFT
     If nans is True, each slice will be stripped,
@@ -139,7 +139,7 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=np.hanning):
     c[1:] = 2*c[1:]
     return f,c
 
- realPSD(d0,win=np.hanning,dx=1.,axis=None,nans=False,minpx=10):
+def realPSD(d0,win=np.hanning,dx=1.,axis=None,nans=False,minpx=10):
     """This function returns the PSD of a real function
     Gets rid of zero frequency and puts all power in positive frequencies
     Returns only positive frequencies
@@ -178,7 +178,7 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=np.hanning):
 
     return f[1:],np.abs(c[1:])**2
 
- computeFreqBand(f,p,f1,f2,df,method='linear'):
+def computeFreqBand(f,p,f1,f2,df,method='linear'):
     """
     Compute the power in the PSD between f1 and f2.
     f and p should be as returned by realPSD or meanPSD
@@ -192,7 +192,7 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=np.hanning):
         pdb.set_trace()
     return np.sqrt(simps(newp,x=newf))
 
- fftComputeFreqBand(d,f1,f2,df,dx=1.,win=np.hanning,nans=False,minpx=10,\
+def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=np.hanning,nans=False,minpx=10,\
                        method='linear'):
     """
     Wrapper to take the FFT and immediately return the
