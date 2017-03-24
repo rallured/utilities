@@ -22,6 +22,7 @@ def isoplot(*args,**kargs):
     ax = fig.add_subplot(111,aspect='equal')
     ax.plot(*args,**kargs)
     fig.show()
+    return ax
 
 #Make temp and data double plot
 def pltd(x1,y1,x2,y2,xlabel='',ylabel1='',ylabel2='',title='',\
