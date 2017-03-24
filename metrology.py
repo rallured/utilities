@@ -282,7 +282,7 @@ def readzygo(filename):
     try:
         intensity = np.reshape(intensity,(iheight,iwidth))
     except:
-        intensity = NaN
+        intensity = np.nan
 
     #Read phase array
     l = f.readline()
@@ -299,7 +299,7 @@ def readzygo(filename):
         l = f.readline()
 
     phase = np.reshape(phase,(pheight,pwidth))
-    phase[where(phase==phase.max())] = nan
+    phase[np.where(phase==phase.max())] = np.nan
     phase = phase*scale*o*wave/phaseres
     f.close()
     print wave, scale, o, phaseres
