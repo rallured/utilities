@@ -6,7 +6,7 @@ from scipy.integrate import simps
 
 #This module contains Fourier analysis routine
 
-def components(d,win=1):
+def components(d,win=np.hanning):
     """Want to return Fourier components with optional window
     Application note: These components are dependent on sampling!
     This means you can *not* interpolate these components onto other
@@ -25,7 +25,7 @@ def components(d,win=1):
     #Compute Fourier components
     return np.fft.fftn(d*win)/np.size(d)
 
-def continuousComponents(d,dx,win=1):
+def continuousComponents(d,dx,win=np.hanning):
     """Want to return Fourier components with optional window
     Divide by frequency interval to convert to continuous FFT
     These components can be safely interpolated onto other frequency
@@ -59,7 +59,7 @@ def freqgrid(d,dx=1.):
     freqx,freqy = np.meshgrid(freqx,freqy)
     return freqx,freqy
 
-def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=1):
+def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=np.hanning):
     """A simple low-pass filter with a high frequency cutoff.
     The cutoff boundary is an ellipsoid in frequency space.
     All frequency components with (fx/fxmax)**2+(fy/fymax)**2 > 1.
@@ -80,7 +80,7 @@ def ellipsoidalHighFrequencyCutoff(d,fxmax,fymax,dx=1.,win=1):
     #Invert the FFT and return the filtered image
     return fft.ifftn(fftcomp)
 
-def meanPSD(d0,win=1,dx=1.,axis=0,irregular=False,returnInd=False,minpx=10):
+ meanPSD(d0,win=np.hanning,dx=1.,axis=0,irregular=False,returnInd=False,minpx=10):
     """Return the 1D PSD averaged over a surface.
     Axis indicates the axis over which to FFT
     If irregular is True, each slice will be stripped
@@ -117,7 +117,7 @@ def meanPSD(d0,win=1,dx=1.,axis=0,irregular=False,returnInd=False,minpx=10):
         return freq,pp
     return freq,pa
 
-def medianPSD(d0,win=1,dx=1.,axis=0,nans=False):
+ medianPSD(d0,win=np.hanning,dx=1.,axis=0,nans=False):
     """Return the 1D PSD "medianed" over a surface.
     Axis indicates the axis over which to FFT
     If nans is True, each slice will be stripped,
@@ -139,7 +139,7 @@ def medianPSD(d0,win=1,dx=1.,axis=0,nans=False):
     c[1:] = 2*c[1:]
     return f,c
 
-def realPSD(d0,win=1,dx=1.,axis=None,nans=False,minpx=10):
+ realPSD(d0,win=np.hanning,dx=1.,axis=None,nans=False,minpx=10):
     """This function returns the PSD of a real function
     Gets rid of zero frequency and puts all power in positive frequencies
     Returns only positive frequencies
@@ -178,7 +178,7 @@ def realPSD(d0,win=1,dx=1.,axis=None,nans=False,minpx=10):
 
     return f[1:],np.abs(c[1:])**2
 
-def computeFreqBand(f,p,f1,f2,df,method='linear'):
+ computeFreqBand(f,p,f1,f2,df,method='linear'):
     """
     Compute the power in the PSD between f1 and f2.
     f and p should be as returned by realPSD or meanPSD
@@ -192,7 +192,7 @@ def computeFreqBand(f,p,f1,f2,df,method='linear'):
         pdb.set_trace()
     return np.sqrt(simps(newp,x=newf))
 
-def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=1,nans=False,minpx=10,\
+ fftComputeFreqBand(d,f1,f2,df,dx=1.,win=np.hanning,nans=False,minpx=10,\
                        method='linear'):
     """
     Wrapper to take the FFT and immediately return the
@@ -204,7 +204,7 @@ def fftComputeFreqBand(d,f1,f2,df,dx=1.,win=1,nans=False,minpx=10,\
     f,p = realPSD(d,dx=dx,win=win,nans=nans)
     return computeFreqBand(f,p,f1,f2,df,method=method)
 
-def psdScan(d,f1,f2,df,N,axis=0,dx=1.,win=1,nans=False,minpx=10):
+def psdScan(d,f1,f2,df,N,axis=0,dx=1.,win=np.hanning,nans=False,minpx=10):
     """
     Take a running slice of length N and compute band limited
     power over the entire image. Resulting power array will be

@@ -221,10 +221,6 @@ def readCylWFS(fn,rotate=np.linspace(.75,1.5,50),interp=None):
 
     return d
 
-from numpy import *
-from matplotlib.pyplot import *
-import pdb
-
 #Read in Zygo ASCII file
 def readzygo(filename):
     #Open file
@@ -272,11 +268,11 @@ def readzygo(filename):
     l = f.readline()
     while (l[0]!='#'):
         #Convert to array of floats
-        l = array(l.split(' '))
+        l = np.array(l.split(' '))
         l = l[:-1].astype('float')
         #Merge into intensity array
         try:
-            intensity = concatenate((intensity,l))
+            intensity = np.concatenate((intensity,l))
         except:
             intensity = l
         #Read next line
@@ -284,7 +280,7 @@ def readzygo(filename):
 
     #Reshape into proper array
     try:
-        intensity = reshape(intensity,(iheight,iwidth))
+        intensity = np.reshape(intensity,(iheight,iwidth))
     except:
         intensity = NaN
 
@@ -292,17 +288,17 @@ def readzygo(filename):
     l = f.readline()
     while (l!=''):
         #Convert to array of floats
-        l = array(l.split(' '))
+        l = np.array(l.split(' '))
         l = l[:-1].astype('float')
         #Merge into intensity array
         try:
-            phase = concatenate((phase,l))
+            phase = np.concatenate((phase,l))
         except:
             phase = l
         #Read next line
         l = f.readline()
 
-    phase = reshape(phase,(pheight,pwidth))
+    phase = np.reshape(phase,(pheight,pwidth))
     phase[where(phase==phase.max())] = nan
     phase = phase*scale*o*wave/phaseres
     f.close()
@@ -315,5 +311,5 @@ def convertzygo(filename):
     #read in zygo data
     intensity,phase,latscale = readzygo(filename)
 
-    savetxt(filename.split('.')[0]+'.txt',phase,header='Lat scale: '+\
+    np.savetxt(filename.split('.')[0]+'.txt',phase,header='Lat scale: '+\
             str(latscale)+'\n'+'Units: meters')
