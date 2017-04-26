@@ -212,8 +212,32 @@ def readCylWFS(fn,rotate=np.linspace(.75,1.5,50),interp=None):
     #Remove cylindrical misalignment terms
     d = d - fit.fitCylMisalign(d)[0]
     
-    # Flip up/down based on CGH orientation and negate to make bump positive.
-    d = -np.flipud(d)
+    # Negate to make bump positive.
+    d = -d
+    
+    #Interpolate over NaNs
+    if interp is not None:
+        d = man.nearestNaN(d,method=interp)
+
+    return d
+
+def readFlatWFS(fn,interp=None):
+    """
+    Load in data from WFS measurement of flat mirror.
+    Assumes that data was processed using processHAS, and loaded into
+    a .fits file.
+    Scale to microns, strip NaNs.
+    If rotate is set to an array of angles, the rotation angle
+    which minimizes the number of NaNs in the image after
+    stripping perimeter nans is selected.
+    Distortion is bump positive looking at concave surface.
+    Imshow will present distortion in proper orientation as if
+    viewing the concave surface.
+    """
+    #Remove NaNs and rescale
+    d = pyfits.getdata(fn)
+    d = man.stripnans(d)
+    d = -d
     
     #Interpolate over NaNs
     if interp is not None:
