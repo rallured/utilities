@@ -75,12 +75,12 @@ def padNaN(img,n=1,axis=0):
         img = np.concatenate((img,ins),axis=axis)
     return img
 
-def padRect(img):
-    """Pads an image with an outer NaN rectangle"""
-    img = padNaN(img,n=1,axis=0)
-    img = padNaN(img,n=-1,axis=0)
-    img = padNaN(img,n=1,axis=1)
-    img = padNaN(img,n=-1,axis=1)
+def padRect(img,nan_num = 1):
+    """Pads an image with an outer NaN rectangle of width nan_num"""
+    img = padNaN(img,n=nan_num,axis=0)
+    img = padNaN(img,n=-nan_num,axis=0)
+    img = padNaN(img,n=nan_num,axis=1)
+    img = padNaN(img,n=-nan_num,axis=1)
     return img
 
 def tipTiltPiston(img,piston,tip,tilt,tx=None,ty=None):

@@ -59,6 +59,7 @@ class pointGetter:
     When done, the user can press the space key.
     """
     def __init__(self,img,log=False):
+        ion()
         self.fig = figure()
         self.x = zeros(0)
         self.y = zeros(0)
