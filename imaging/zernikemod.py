@@ -1,12 +1,10 @@
-from numpy import *
+import numpy as np
+from math import factorial
 from numpy.ma import masked_array
-#from scipy import *
 import scipy
 from scipy.misc import factorial
 import scipy.stats as stat
-from matplotlib.pyplot import *
 import pdb
-from legendremod import unpackimage
 
 #Define Zernike radial polynomials
 def rnm(n,m,rho):
@@ -36,12 +34,12 @@ def rnm(n,m,rho):
         raise Exception, "n-m must be even"
     if abs(m)>n:
         raise Exception, "The following must be true |m|<=n"
-    mask=where(rho<=1,False,True)
+    mask=np.where(rho<=1,False,True)
     
     if(n==0 and m==0):
-        return  masked_array(data=ones(shape(rho)), mask=mask)
-    rho=where(rho<0,0,rho)
-    Rnm=zeros(rho.shape)
+        return  masked_array(data=np.ones(np.shape(rho)), mask=mask)
+    rho=np.where(rho<0,0,rho)
+    Rnm=np.zeros(rho.shape)
     S=(n-abs(m))/2
     for s in range (0,S+1):
         CR=pow(-1,s)*factorial(n-s)/ \
@@ -73,35 +71,37 @@ def zernike(n,m,rho,theta):
     
     Rnm=rnm(n,m,rho)
     
-    NC=sqrt(2*(n+1))
+    NC=np.sqrt(2*(n+1))
     S=(n-abs(m))/2
     
     if m>0:
-        Zmn=NC*Rnm*cos(m*theta)
+        Zmn=NC*Rnm*np.cos(m*theta)
     #las funciones cos() y sin() de scipy tienen problemas cuando la grilla
     # tiene dimension cero
     
     elif m<0:
-        Zmn=NC*Rnm*sin(m*theta)
+        Zmn=NC*Rnm*np.sin(m*theta)
     else:
-        Zmn=sqrt(0.5)*NC*Rnm
+        Zmn=np.sqrt(0.5)*NC*Rnm
     return Zmn
 
-#Construct Zernike mode vectors in standard ordering
-#Includes all modes up to radial order N
 def zmodes(N):
+    """
+    Construct Zernike mode vectors in standard ordering
+    Includes all modes up to radial order N
+    """
     r = 0 #Starting radial mode
     radial = []
     azimuthal = []
     z = []
-    while size(radial) < N:
+    while np.size(radial) < N:
         if r % 2 == 0:
             m = 0 #Set starting azimuthal mode to 0
         else:
             m = 1 #Set starting azimuthal mode to 1
-        while m <= r and size(radial) < N:
+        while m <= r and np.size(radial) < N:
             #Get current z number
-            z = size(azimuthal) + 1
+            z = np.size(azimuthal) + 1
             #If z is odd, append sine first
             #Append negative and positive m
             if z % 2 == 1:
@@ -117,49 +117,27 @@ def zmodes(N):
                 radial.append(r)
             m = m + 2
         r = r + 1 #Increment radial order
-    return array(radial[:N],order='F').astype('int'),\
-           array(azimuthal[:N],order='F').astype('int')
+    return np.array(radial[:N],order='F').astype('int'),\
+           np.array(azimuthal[:N],order='F').astype('int')
 
-#Formulate Zernike least squares fitting matrix
-#Requires rho and theta vectors, normalized to rhomax=1
 def zmatrix(rho,theta,N,r=None,m=None):
+    """
+    Formulate Zernike least squares fitting matrix
+    Requires rho and theta vectors, normalized to rhomax=1
+    """
     #Create mode vectors
     if r is None:
         r,m = zmodes(N)
 
     #Form matrix
-    A = zeros((size(rho),size(r)))
+    A = np.zeros((np.size(rho),np.size(r)))
 
     #Populate matrix columns
-    for i in range(size(r)):
+    for i in range(np.size(r)):
         A[:,i] = zernike(int(r[i]),int(m[i]),rho,theta)
 
     return A
 
-def locateimage(data,minrad,maxrad,calcrad=True):
-    #Determine centroid by converting wavefront to binary
-    bdata = copy(data)
-    bdata[invert(isnan(bdata))] = 1.
-    x,y = meshgrid(arange(shape(bdata)[0]),arange(shape(bdata)[1]))
-    cx = nansum(x*bdata)/nansum(bdata)
-    cy = nansum(y*bdata)/nansum(bdata)
-        
-    #Determine radius
-    if calcrad is True:
-        fom = []
-        rad = linspace(minrad,maxrad,100.)
-        for r in rad:
-            fom.append(sum(isnan(data[where((x-cx)**2+(y-cy)**2 <= r**2)])))
-            
-        fom = array(fom)
-        rad = max(rad[where(fom<5.)])
-        return cx,cy,rad
-    
-    return cx,cy
-
-#Convert Cartesian coordinates to polar
-#Remove points outside Zernike subaperture
-#based on center and radius
 def carttopolar(x,y,cx,cy,rad):
     #Convert to polar
     r = (sqrt((x-cx)**2+(y-cy)**2))/rad
@@ -190,6 +168,59 @@ def zernsurf(x,y,cx,cy,rad,coeff,r=None,m=None):
     heights[where(rho>1.)] = NaN
 
     return heights.data
+
+def fitimg(img,N=20,r=None,m=None):
+    """
+    Perform Zernike fit on an image.
+    Zernike domain is defined over the full image array.
+    """
+    #Construct rho and theta vectors
+    x,y = np.meshgrid(np.linspace(-1.,1.,np.shape(img)[0]),\
+                      np.linspace(-1.,1.,np.shape(img)[1]))
+    rho = np.sqrt(x**2+y**2)
+    theta = np.arctan2(y,x)
+
+    #Flatten and remove NaNs
+    rho = rho.flatten()
+    theta = theta.flatten()
+
+    #Get b vector
+    b = img.flatten()
+
+    #Get A matrix
+    A = zmatrix(rho[~np.isnan(b)],theta[~np.isnan(b)],N,r=r,m=m)
+
+    #Solve for coefficients
+    c = scipy.linalg.lstsq(A,b[~np.isnan(b)])
+
+    #Reconstruct fit image
+    coeff = c[0]
+    A = zmatrix(rho,theta,N,r=r,m=m)
+    fit = np.dot(A,coeff)
+    fit = fit.reshape(np.shape(x))
+    fit[np.isnan(img)] = np.nan
+
+    return c,fit.reshape(np.shape(x))
+
+def fitvec(x,y,z,N=20,r=None,m=None):
+    """
+    Perform Zernike fit on an image.
+    Zernike domain is defined over the full image array.
+    """
+    #Construct rho and theta vectors
+    rho = np.sqrt(x**2+y**2)
+    theta = np.arctan2(y,x)
+    rho = rho/rho.max()
+
+    #Get A matrix
+    A = zmatrix(rho,theta,N,r=r,m=m)
+
+    #Solve for coefficients
+    c = scipy.linalg.lstsq(A,z)
+
+    return c
+    
+    
 
 #Function to output Zernike coefficients and RMS fit error for x,y,z txt file
 def zcoeff(filename,save=False,cx=0.,cy=0.,rad=1.,order=20,r=None,m=None,**kwags):
@@ -269,29 +300,3 @@ def zcoeff(filename,save=False,cx=0.,cy=0.,rad=1.,order=20,r=None,m=None,**kwags
                 ,insert(fit[0],0,size(fit[0])))
 
     return fit[0],fit[1],rms,fitsurf
-
-def padimage(d):
-    #Pad smaller dimension with NaN arrays
-    s1,s2 = shape(d)
-    if s1<s2:
-        for i in range(s2-s1):
-            d = vstack((d,repeat(nan,s2)))
-    else:
-        d = transpose(d)
-        for i in range(s1-s2):
-            d = vstack((d,repeat(nan,s1)))
-        d = transpose(d)
-    return d
-
-def stripnans(d):
-    newsize = shape(d)[1]
-    while sum(isnan(d[0]))==newsize:
-        d = d[1:]
-    while sum(isnan(d[-1]))==newsize:
-        d = d[:-1]
-    newsize = shape(d)[0]
-    while sum(isnan(d[:,0]))==newsize:
-        d = d[:,1:]
-    while sum(isnan(d[:,-1]))==newsize:
-        d = d[:,:-1]
-    return d
