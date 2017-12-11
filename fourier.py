@@ -333,6 +333,15 @@ def randomizePh(d):
 
     return ph
     
-
-
-    
+def randomProfile(freq,psd):
+    """
+    Generate a random profile from an input PSD.
+    freq should be in standard fft.fftfreq format
+    psd should be symmetric as with a real signal
+    sqrt(sum(psd)) will equal RMS of profile
+    """
+    amp = np.sqrt(psd)*len(freq)
+    ph = randomizePh(amp)
+    f = amp*ph
+    sig = np.fft.ifft(f)
+    return np.real(sig)
