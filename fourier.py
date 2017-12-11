@@ -49,7 +49,7 @@ def newFreq(f,p,nf):
     """
     Interpolate a power spectrum onto a new frequency grid.
     """
-    return griddata(f,p,nf,method=metehod)
+    return griddata(f,p,nf,method=method)
 
 def freqgrid(d,dx=1.):
     """Return a frequency grid to match FFT components
