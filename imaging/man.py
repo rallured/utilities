@@ -83,6 +83,11 @@ def padRect(img,nan_num = 1):
     img = padNaN(img,n=-nan_num,axis=1)
     return img
 
+def borderFill(img,n = 1,fill_value = np.NaN):
+    img[:n],img[-n:] = fill_value,fill_value
+    img[:,:n],img[:,-n:] = fill_value,fill_value
+    return img
+
 def tipTiltPiston(img,piston,tip,tilt,tx=None,ty=None):
     """This function adds a constant and
     tip and tilt to an array
@@ -240,6 +245,8 @@ def removeDS9Regions(img,filename):
     for l in lines:
         t = l.split('(')[0]
         n = np.array(l.split('(')[1].split(','))
+        # Note: this can throw an error based on Mac vs. Windows -- if there's a carriage return
+        # plus a new line, the second value should be -3.
         n[-1] = n[-1][:-2]
         n = n.astype('float')
         if t == 'circle':

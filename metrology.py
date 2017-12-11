@@ -212,8 +212,9 @@ def readCylWFS(fn,rotate=np.linspace(.75,1.5,50),interp=None):
     #Remove cylindrical misalignment terms
     d = d - fit.fitCylMisalign(d)[0]
     
-    # Negate to make bump positive.
+    # Negate to make bump positive and rotate to be consistent with looking at the part beamside.
     d = -d
+    d = np.rot90(d,k = 2)
     
     #Interpolate over NaNs
     if interp is not None:
@@ -337,3 +338,6 @@ def convertzygo(filename):
 
     np.savetxt(filename.split('.')[0]+'.txt',phase,header='Lat scale: '+\
             str(latscale)+'\n'+'Units: meters')
+
+def make_extent(data,dx):
+    return [-float(np.shape(data)[1])/2*dx,float(np.shape(data)[1])/2*dx,-float(np.shape(data)[0])/2*dx,float(np.shape(data)[0])/2*dx]

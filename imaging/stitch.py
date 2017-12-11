@@ -36,7 +36,19 @@ def transformCoords_wMag(x,y,tx,ty,theta,mag):
     pos0 = np.array((mag_x,mag_y,np.repeat(0.,np.size(x)),np.repeat(1.,np.size(x))))
     pos1 = np.dot(trans,np.dot(rot,pos0))
     return pos1[0],pos1[1]
-    
+
+def transformCoords_wSeparateMag(x,y,tx,ty,theta,x_mag,y_mag):
+    """Transforms coordinates x,y by magnifying x,y by a constant factor,
+    then translating tx,ty and rotating theta about x
+    Returns: x,y of new coords
+    """
+    new_x,new_y = x*x_mag,y*y_mag
+    trans = tr.translation_matrix([tx,ty,0])
+    rot = tr.rotation_matrix(theta,[0,0,1],point=[np.mean(x),np.mean(y),0])
+    pos0 = np.array((new_x,new_y,np.repeat(0.,np.size(x)),np.repeat(1.,np.size(x))))
+    pos1 = np.dot(trans,np.dot(rot,pos0))
+    return pos1[0],pos1[1]
+
 def matchFiducials(x1,y1,x2,y2):
     """This function will compute a rotation and translation
     to match a list of fiducial coordinates
@@ -78,6 +90,34 @@ def matchFiducials_wMag(x1,y1,x2,y2):
     start[1] = np.mean(y1-y2)
     start[2] = .0001
     start[3] = 1.0
+
+    #Run minimization and return fiducial transformation
+    res = minimize(fun,start,method='nelder-mead',\
+                   options={'disp':True,'maxfev':1000})
+    
+    return res['x']
+
+def matchFiducials_wSeparateMag(x1,y1,x2,y2):
+    '''
+    This function will compute a rotation, translation and
+    magnification needed to match a list of fiducial coordinates.
+    Returns:
+    tx, ty - translations
+    theta - rotation
+    mag - magnification factor
+    These transformations are needed to bring x2,y2 to x1,y1
+    '''
+
+    #Make function to minimize
+    fun = lambda p: sumOfSquares(x1,y1,*transformCoords_wSeparateMag(x2,y2,*p))
+    
+    #Make starting guess
+    start = np.zeros(5)
+    start[0] = np.mean(x1-x2)
+    start[1] = np.mean(y1-y2)
+    start[2] = .0001
+    start[3] = 1.0
+    start[4] = 1.0
 
     #Run minimization and return fiducial transformation
     res = minimize(fun,start,method='nelder-mead',\
@@ -273,6 +313,42 @@ def AlignImagesWithFiducials(img1,img2,xf1,yf1,xf2,yf2):
                            ylim=[0,np.shape(img2)[0]])
     #Apply transformations to x,y coords
     x2_wNaNs,y2_wNaNs = transformCoords_wMag(x2_wNaNs,y2_wNaNs,ty,tx,theta,mag)
+    
+    #Get x,y,z points from reference image
+    x1,y1,z1 = man.unpackimage(img1,remove=False,xlim=[0,np.shape(img1)[1]],\
+                           ylim=[0,np.shape(img1)[0]])
+
+    #Interpolate stitched image onto expanded image grid
+    newimg = griddata((x2_wNaNs,y2_wNaNs),z2_wNaNs,(x1,y1),method='linear')
+    print 'Interpolation ok'
+    newimg = newimg.reshape(np.shape(img1))
+
+    #Images should now be in the same reference frame
+    #Time to apply tip/tilt/piston to minimize RMS
+    newimg = matchPistonTipTilt(img1,newimg)
+
+    return newimg
+
+def AlignImagesWithFiducials_SeparateMag(img1,img2,xf1,yf1,xf2,yf2):
+    """
+    Aligns img2 to img1 based on an array listing the x,y coordinates of common fiducials.
+    Arguments:
+    img1 - the reference image to be aligned to.
+    img2 - the image to be aligned to the reference image.
+    xf1 - an array containing the x coordinates of the fiducials in img1
+    yf1 - an array containing the y coordinates of the fiducials in img1.
+    xf2 - an array containing the x coordinates of the fiducials in img2.
+    yf2 - an array containing the y coordinates of the fiducials in img2.
+    Returns:
+    newimg - img2 as aligned and interpolated to the coordinates of img1.
+    """
+    #Match them
+    tx,ty,theta,x_mag,y_mag = matchFiducials_wSeparateMag(yf1,xf1,yf2,xf2)
+
+    x2_wNaNs,y2_wNaNs,z2_wNaNs = man.unpackimage(img2,remove = False,xlim=[0,np.shape(img2)[1]],\
+                           ylim=[0,np.shape(img2)[0]])
+    #Apply transformations to x,y coords
+    x2_wNaNs,y2_wNaNs = transformCoords_wSeparateMag(x2_wNaNs,y2_wNaNs,ty,tx,theta,x_mag,y_mag)
     
     #Get x,y,z points from reference image
     x1,y1,z1 = man.unpackimage(img1,remove=False,xlim=[0,np.shape(img1)[1]],\
