@@ -50,6 +50,14 @@ def fitCylMisalign(d):
     """
     return legendre2d(d,xl=[0,0,1,2,1],yl=[0,1,0,0,1])
 
+def fitConic(d):
+    """
+    Fit cylindrical misalignment terms to an image
+    Piston, tip, tilt, cylindrical sag, and astigmatism
+    are fit
+    """
+    return legendre2d(d,xl=[0,0,1,2,1,2],yl=[0,1,0,0,1,1])
+
 def fitLegendreDistortions(d,xo=2,yo=2,xl=None,yl=None):
     """
     Fit 2D Legendre's to a distortion map as read by 4D.

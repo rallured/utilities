@@ -222,6 +222,41 @@ def readCylWFS(fn,rotate=np.linspace(.75,1.5,50),interp=None):
 
     return d
 
+def readConicWFS(fn,interp=None):
+    """
+    Load in data from WFS measurement of cylindrical mirror.
+    Assumes that data was processed using processHAS, and loaded into
+    a .fits file.
+    Scale to microns, remove misalignments,
+    strip NaNs.
+    If rotate is set to an array of angles, the rotation angle
+    which minimizes the number of NaNs in the image after
+    stripping perimeter nans is selected.
+    Distortion is bump positive looking at concave surface.
+    Imshow will present distortion in proper orientation as if
+    viewing the concave surface.
+    Returns the data with best fit conic removed, as well as the
+    coefficients in the conic fit.
+    """
+    #Remove NaNs and rescale
+    d = pyfits.getdata(fn)
+    d = man.stripnans(d)
+    d = d - np.nanmean(d)
+    
+    # Negate to make bump positive and rotate to be consistent with looking at the part beamside.
+    d = -d
+    d = np.rot90(d,k = 2)
+    
+    #Remove cylindrical misalignment terms
+    conic_fit = fit.fitConic(d)
+    d = d - conic_fit[0]
+    
+    #Interpolate over NaNs
+    if interp is not None:
+        d = man.nearestNaN(d,method=interp)
+
+    return d,conic_fit[1]
+
 def readFlatWFS(fn,interp=None):
     """
     Load in data from WFS measurement of flat mirror.
