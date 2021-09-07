@@ -2,7 +2,7 @@ import numpy as np
 from math import factorial
 from numpy.ma import masked_array
 import scipy
-from scipy.misc import factorial
+from scipy.special import factorial
 import scipy.stats as stat
 import pdb
 
@@ -27,20 +27,20 @@ def rnm(n,m,rho):
     """
     
     if(type(n) is not int):
-        raise Exception, "n must be integer"
+        raise Exception("n must be integer")
     if(type(m) is not int):
-        raise Exception, "m must be integer"
+        raise Exception("m must be integer")
     if (n-m)%2!=0:
-        raise Exception, "n-m must be even"
+        raise Exception("n-m must be even")
     if abs(m)>n:
-        raise Exception, "The following must be true |m|<=n"
+        raise Exception("The following must be true |m|<=n")
     mask=np.where(rho<=1,False,True)
     
     if(n==0 and m==0):
         return  masked_array(data=np.ones(np.shape(rho)), mask=mask)
     rho=np.where(rho<0,0,rho)
     Rnm=np.zeros(rho.shape)
-    S=(n-abs(m))/2
+    S=np.int((n-abs(m))/2)
     for s in range (0,S+1):
         CR=pow(-1,s)*factorial(n-s)/ \
             (factorial(s)*factorial(-s+(n+abs(m))/2)* \
@@ -152,20 +152,20 @@ def carttopolar(x,y,cx,cy,rad):
 
 #Reconstruct surface on unique x and y vectors for zernike coefficients
 def zernsurf(x,y,cx,cy,rad,coeff,r=None,m=None):
-    if size(unique(x)) == size(x):
-        x,y = meshgrid(x,y)
-    rho = sqrt((x-cx)**2+(y-cy)**2)/rad
-    theta = arctan2((y-cy),(x-cx))
-    heights = zeros(shape(x))
+    if np.size(np.unique(x)) == np.size(x):
+        x,y = np.meshgrid(x,y)
+    rho = np.sqrt((x-cx)**2+(y-cy)**2)/rad
+    theta = np.arctan2((y-cy),(x-cx))
+    heights = np.zeros(np.shape(x))
 
     if r is None:
-        r,m = zmodes(size(coeff))
+        r,m = zmodes(np.size(coeff))
 
-    for i in range(size(r)):
+    for i in range(np.size(r)):
         heights = heights + coeff[i]*zernike(int(r[i]),int(m[i]),rho,theta)
 
     #Set outside pixels to NaN
-    heights[where(rho>1.)] = NaN
+    heights[np.where(rho>1.)] = np.NaN
 
     return heights.data
 
@@ -300,3 +300,18 @@ def zcoeff(filename,save=False,cx=0.,cy=0.,rad=1.,order=20,r=None,m=None,**kwags
                 ,insert(fit[0],0,size(fit[0])))
 
     return fit[0],fit[1],rms,fitsurf
+
+def coefRMS(coef,removetilt=True,removepower=False):
+    """Calculate the RMS variation from a set of standard ordered Zernikes"""
+    #Remove tilt
+    if removetilt:
+        coef[0:3] = 0.
+    if removepower:
+        coef[3] = 0.
+    pdb.set_trace()
+    #Compute r,m values
+    r,m = zmodes(len(coef))
+    #Compute variance
+    az = np.ones(np.size(m))
+    az[m==0] = 2
+    return np.sqrt(np.sum(np.abs(coef)*az/(2*r+2)))
